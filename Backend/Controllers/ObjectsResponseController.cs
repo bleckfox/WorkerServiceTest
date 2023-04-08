@@ -25,15 +25,15 @@ public class ObjectsResponseController : ControllerBase
     [HttpGet(Name = "GetObjectsResponse")]
     [ProducesResponseType(typeof(List<GenerateObjectModel>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetObjectsResponse([FromQuery] int minValue, [FromQuery] int maxValue)
+    public async Task<IActionResult> GetObjectsResponse([FromQuery] int min, [FromQuery] int max)
     {
-        return minValue switch
+        return min switch
         {
-            > 0 when maxValue > 0 && maxValue >= minValue => Ok(
+            > 0 when max > 0 && max >= min => Ok(
                 await Task.Run(async () =>
                     {
                         string[] lines = await Task.Run(() => System.IO.File.ReadAllLines(_testFilePath));
-                        return Enumerable.Range(1, Random.Shared.Next(minValue, maxValue))
+                        return Enumerable.Range(1, Random.Shared.Next(min, max))
                             .Select(data => new GenerateObjectModel
                             {
                                 Text = $"{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}.{lines[Random.Shared.Next(0, lines.Length - 1)]}"
