@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+using RestSharp;
 
 namespace WorkerService;
 
@@ -20,10 +20,39 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        using (HttpClient client = new HttpClient())
         {
-            _logger.LogInformation("Worker running at: {time}\nHost - > {host}, Port -> {port}, _threadingNumber -> {threadingNumber}", DateTimeOffset.Now, _apiHost, _apiPort, _threadingNumber);
-            await Task.Delay(1000, stoppingToken);
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    int min = Random.Shared.Next(1, 5);
+                    int max = Random.Shared.Next(min + 1, min + 5);
+                    
+                    HttpResponseMessage response =
+                        await client.GetAsync($"https://{_apiHost}:{_apiPort}/objects?min={min}&max={max}");
+                    
+                    response.EnsureSuccessStatusCode();
+                    
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    
+                    _logger.LogInformation($"{responseBody}");
+                    
+                    await Task.Delay(10000, stoppingToken);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogInformation("Error!");
+                }
+            }
         }
     }
 }
+//     - если не существует, создать файл received_objects.txt
+//     - записать полученные значения по значению на строку
+//     - сохранить
+//     - проверять размер файла
+//     - если больше 8 Гб, остановить запросы
+//     - сделать сортировку
+//     - сохранить
+//     - начать заново
