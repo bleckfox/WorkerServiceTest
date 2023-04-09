@@ -61,8 +61,7 @@ public class Worker : BackgroundService
 
                     while (receivedFileSizeGigaByte < _fileSizeThreshold)
                     {
-                        long receivedFileSize = await GetReceivedFileSize(client, stoppingToken);
-                        receivedFileSizeGigaByte = (int) SizeConverterHelper.BytesToGigabytes(receivedFileSize);
+                        receivedFileSizeGigaByte = await GetReceivedFileSize(client, stoppingToken);
                     }
 
                     File.Delete(_receivedFilePath);
@@ -86,11 +85,17 @@ public class Worker : BackgroundService
         }
     }
 
-    private async Task<long> GetReceivedFileSize(HttpClient client, CancellationToken stoppingToken)
+    /// <summary>
+    /// Получение информации о размере файла
+    /// </summary>
+    /// <param name="client">HttpClient для отправки запроса</param>
+    /// <param name="stoppingToken">Уведомление о прекращении операций</param>
+    /// <returns>Размер файла в GB (гигабайт)</returns>
+    private async Task<int> GetReceivedFileSize(HttpClient client, CancellationToken stoppingToken)
     {
-        long fileSize = new FileInfo(_receivedFilePath).Length;
+        int fileSizeGb = (int) SizeConverterHelper.BytesToGigabytes(new FileInfo(_receivedFilePath).Length);
 
-        if (stoppingToken.IsCancellationRequested) return fileSize;
+        if (stoppingToken.IsCancellationRequested) return fileSizeGb;
         
         try
         {
@@ -98,7 +103,7 @@ public class Worker : BackgroundService
             await SaveReceivedObjects(responseBody, stoppingToken);
 
             // Получим информацию о размере после того, как добавили новые данные
-            fileSize = new FileInfo(_receivedFilePath).Length;
+            long fileSize = new FileInfo(_receivedFilePath).Length;
 
             _logger.LogInformation(
                 "Received information save in file. Current time -> {time}\nFile size is {bytes} Bytes {kilobyte} KB -> {megabyte} MB -> {gigabyte} GB",
@@ -108,15 +113,15 @@ public class Worker : BackgroundService
                 SizeConverterHelper.BytesToMegabytes(fileSize),
                 SizeConverterHelper.BytesToGigabytes(fileSize)
             );
-
-            return fileSize;
+            
+            fileSizeGb = (int) SizeConverterHelper.BytesToGigabytes(fileSize);
         }
         catch (Exception e)
         {
             _logger.LogInformation("Error!");
         }
 
-        return fileSize;
+        return fileSizeGb;
     }
 
     /// <summary>
@@ -169,7 +174,6 @@ public class Worker : BackgroundService
     }
 }
 
-//     - если больше 8 Гб, остановить запросы
 //     - сделать сортировку
 //     - сохранить
 //     - начать заново
