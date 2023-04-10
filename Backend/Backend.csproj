@@ -15,4 +15,9 @@
       <ProjectReference Include="..\WorkerService\WorkerService.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Received values" />
+      <Folder Include="Sorted values" />
+    </ItemGroup>
+
 </Project>
